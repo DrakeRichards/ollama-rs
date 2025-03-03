@@ -1,6 +1,7 @@
-use schemars::{gen::SchemaSettings, schema::RootSchema};
+use schemars::{gen::SchemaSettings, schema::RootSchema, schema_for_value};
 pub use schemars::{schema_for, JsonSchema};
 use serde::{Serialize, Serializer};
+use serde_json::Value;
 
 /// The format to return a response in
 #[derive(Debug, Clone)]
@@ -44,6 +45,12 @@ impl JsonStructure {
         let schema = generator.into_root_schema_for::<T>();
 
         Self { schema }
+    }
+
+    pub fn from_value(value: Value) -> Self {
+        Self {
+            schema: schema_for_value!(value),
+        }
     }
 }
 
