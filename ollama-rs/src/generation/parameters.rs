@@ -1,4 +1,4 @@
-use schemars::{gen::SchemaSettings, schema::RootSchema, schema_for_value};
+use schemars::{gen::SchemaSettings, schema::RootSchema};
 pub use schemars::{schema_for, JsonSchema};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
@@ -10,6 +10,10 @@ pub enum FormatType {
 
     /// Requires Ollama 0.5.0 or greater.
     StructuredJson(JsonStructure),
+
+    /// Requires Ollama 0.5.0 or greater.
+    /// This is a JSON value that represents a JSON schema. Be very careful using this since there's no validation.
+    StructuredJsonValue(Value),
 }
 
 impl Serialize for FormatType {
@@ -20,6 +24,7 @@ impl Serialize for FormatType {
         match self {
             FormatType::Json => serializer.serialize_str("json"),
             FormatType::StructuredJson(s) => s.schema.serialize(serializer),
+            FormatType::StructuredJsonValue(v) => v.serialize(serializer),
         }
     }
 }
@@ -45,12 +50,6 @@ impl JsonStructure {
         let schema = generator.into_root_schema_for::<T>();
 
         Self { schema }
-    }
-
-    pub fn from_value(value: Value) -> Self {
-        Self {
-            schema: schema_for_value!(value),
-        }
     }
 }
 

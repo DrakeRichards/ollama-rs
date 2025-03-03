@@ -6,6 +6,7 @@ use ollama_rs::{
     generation::{
         chat::{request::ChatMessageRequest, ChatMessage},
         images::Image,
+        parameters::FormatType,
     },
     Ollama,
 };
@@ -153,6 +154,55 @@ async fn test_send_chat_messages_with_images() {
             "llava:latest".to_string(),
             messages,
         ))
+        .await
+        .unwrap();
+    dbg!(&res);
+
+    assert!(res.done);
+}
+
+#[tokio::test]
+async fn test_send_chat_messages_with_structured_json_output() {
+    let ollama = Ollama::default();
+
+    let messages = vec![ChatMessage::user(PROMPT.to_string())];
+    let schema = r#"
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "http://example.com/example.schema.json",
+    "title": "Example",
+    "description": "An example schema in JSON",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "Name of the person",
+            "type": "string"
+        },
+        "age": {
+            "description": "Age of the person",
+            "type": "integer"
+        },
+        "isStudent": {
+            "description": "Is the person a student?",
+            "type": "boolean"
+        },
+        "courses": {
+            "description": "Courses the person is taking",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        }
+    },
+    "required": ["name", "age", "isStudent", "courses"]
+}
+        "#;
+    let schema = serde_json::from_str(schema).unwrap();
+    let format = FormatType::StructuredJsonValue(schema);
+    let res = ollama
+        .send_chat_messages(
+            ChatMessageRequest::new("llama3.1".to_string(), messages).format(format),
+        )
         .await
         .unwrap();
     dbg!(&res);
